@@ -1,104 +1,287 @@
-# Reddit Bot with Shapes API Integration
+# Shapes Reddit Bot
 
-This project creates a Reddit bot that listens for mentions of its username in a specific subreddit and responds using the Shapes API.
+A powerful Reddit bot that integrates with the Shapes.inc API to provide AI-powered responses to mentions and comments across multiple subreddits.
 
 ## Features
 
-- Connects to Reddit using Snoowrap
-- Listens for mentions of the bot's username in a specified subreddit
-- Processes user prompts using your custom Shapes API model/Shape Username
-- Sends generated responses back to Reddit comments
+- 🎯 **Multi-Subreddit Support**: Monitor multiple subreddits simultaneously
+- 🤖 **AI-Powered Responses**: Uses Shapes.inc API for intelligent replies
+- 🎲 **Random Reply Mode**: Optionally reply to random comments (not just mentions)
+- 📊 **Real-time Statistics**: Track bot performance and activity
+- 🛡️ **Error Handling**: Robust error handling with graceful degradation
+- ⚡ **Configurable**: Extensive configuration options via environment variables
+- 🔄 **Auto-Recovery**: Handles API failures and network issues gracefully
+![image](https://github.com/user-attachments/assets/e7931bea-1ce1-4540-8481-5341826047f9)
 
 ## Prerequisites
 
-- Node.js (v16 or newer)
-- npm or yarn
-- A Reddit account and Reddit API credentials (client ID, client secret, username, password)
-- A Shapes Inc account with an API key
+Before running the bot, you'll need:
 
-## Setup Instructions
+1. **Node.js** (version 14 or higher)
+2. **Reddit App Credentials** (see setup guide below)
+3. **Shapes.inc API Key** and username
+4. **Reddit Account** for the bot
 
-### 1. Clone the repository
+## Setup Guide
 
-```bash
-git clone git clone https://github.com/shapesinc/api-examples.git
-cd shapes-reddit
-```
-
-### 2. Install dependencies
+### 1. Clone the Repository
 
 ```bash
+git clone <repository-url>
+cd shape-reddit
 npm install
 ```
 
-### 3. Configure environment variables
+### 2. Reddit App Setup
 
-Create a `.env` file in the root directory with the following variables:
+1. Go to [Reddit App Preferences](https://www.reddit.com/prefs/apps)
+2. Click "Create App" or "Create Another App"
+3. Fill in the form:
+   - **Name**: Your bot name (e.g., "MyShapesBot")
+   - **App type**: Select "script"
+   - **Description**: Brief description of your bot
+   - **About URL**: Leave blank or add your GitHub URL
+   - **Redirect URI**: Use `http://localhost:8080` (required but not used)
+4. Click "Create app"
+5. Note down the **Client ID** (under the app name) and **Client Secret**
 
-```
-SHAPESINC_API_KEY=your_shapes_api_key
-SHAPESINC_SHAPE_USERNAME=your_shapes_username
-REDDIT_CLIENT_ID=your_reddit_client_id
-REDDIT_CLIENT_SECRET=your_reddit_client_secret
-REDDIT_USERNAME=your_reddit_username
-REDDIT_PASSWORD=your_reddit_password
-REDDIT_SUBREDDIT=your_subreddit_name
-POLL_TIME=5000
-LIMIT=5 
-```
+### 3. Shapes.inc Setup
 
-### 4. Obtaining Reddit API credentials
+1. Sign up at [Shapes.inc](https://shapes.inc)
+2. Get your API key from the dashboard
+3. Note your Shapes username
 
-To get your Reddit API credentials:
+### 4. Environment Configuration
 
-1. Go to Reddit's developer site 'https://www.reddit.com/prefs/apps/'
-2. Create a new developer application (script type)
-3. Copy the client ID, client secret, username, and password for your bot
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
 
-### 5. Running the bot
+2. Edit `.env` with your credentials:
+   ```bash
+   # Shapes.inc Configuration
+   SHAPESINC_API_KEY=your_shapes_api_key_here
+   SHAPESINC_SHAPE_USERNAME=your_shapes_username_here
+   
+   # Reddit Configuration
+   REDDIT_CLIENT_ID=your_reddit_client_id_here
+   REDDIT_CLIENT_SECRET=your_reddit_client_secret_here
+   REDDIT_USERNAME=your_reddit_bot_username_here
+   REDDIT_PASSWORD=your_reddit_bot_password_here
+   
+   # Subreddits to monitor (comma-separated, no 'r/')
+   REDDIT_SUBREDDITS=test,bottest,yoursubreddit
+   ```
 
+## Configuration Options
+
+### Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SHAPESINC_API_KEY` | Your Shapes.inc API key | `sk-1234567890abcdef` |
+| `SHAPESINC_SHAPE_USERNAME` | Your Shapes.inc username | `myusername` |
+| `REDDIT_CLIENT_ID` | Reddit app client ID | `abc123def456` |
+| `REDDIT_CLIENT_SECRET` | Reddit app client secret | `secret123` |
+| `REDDIT_USERNAME` | Accounts Reddit username | `MyBot` |
+| `REDDIT_PASSWORD` | Accounts Reddit password | `password123` |
+| `REDDIT_SUBREDDITS` | Comma-separated subreddit list | `AskReddit,programming,test` |
+
+### Optional Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REPLY_TO_RANDOM` | `false` | Enable random replies to comments |
+| `RANDOM_REPLY_CHANCE` | `0.1` | Probability of random replies (0.0-1.0) |
+| `POLL_TIME` | `5000` | Polling interval in milliseconds |
+| `LIMIT` | `10` | Max comments to fetch per poll |
+| `MAX_CONTENT_LENGTH` | `1000` | Max characters sent to Shapes API |
+
+## Running the Bot
+
+### Development Mode
 ```bash
-npm run start
+npm run dev
 ```
 
-## Usage
+### Production Mode
+```bash
+npm start
+```
 
-Once the bot is running and connected to Reddit, it will automatically start listening for comments that mention its username in the specified subreddit. It will then respond to those comments by processing the content through the Shapes API.
+### Using PM2 (Recommended for Production)
+```bash
+# Install PM2 globally
+npm install -g pm2
 
-## Bot Behavior
+# Start the bot
+pm2 start index.js --name "shapes-reddit-bot"
 
-- The bot checks for mentions of `u/your_reddit_username` or `/u/your_reddit_username` in comments.
-- The bot processes the comment content through the Shapes API, sending the author's name as X-User-Id and the subreddit name as X-Channel-Id.
-- The response from the Shapes API is posted back to the comment as a reply.
-- The bot ignores comments made by itself.
+# View logs
+pm2 logs shapes-reddit-bot
 
+# Restart bot
+pm2 restart shapes-reddit-bot
+
+# Stop bot
+pm2 stop shapes-reddit-bot
+```
+
+## How It Works
+
+### Mention Detection
+The bot monitors specified subreddits for comments containing:
+- `u/yourbotusername`
+- `/u/yourbotusername`
+
+When detected, it processes the comment through the Shapes.inc API and replies.
+
+### Random Replies (Optional)
+When `REPLY_TO_RANDOM=true`, the bot will occasionally reply to random comments based on the `RANDOM_REPLY_CHANCE` setting.
+
+### Content Processing
+1. Comments are filtered and validated
+2. Content is truncated if it exceeds `MAX_CONTENT_LENGTH`
+3. Content is sent to Shapes.inc API with user and channel context
+4. AI response is posted as a reply
+
+## Monitoring and Statistics
+
+The bot provides real-time statistics every minute:
+
+```
+📊 Bot Statistics (Uptime: 3600s)
+   💬 Total Comments Processed: 150
+   🎯 Mention Replies: 12
+   🎲 Random Replies: 8
+   ❌ Errors: 2
+   📈 Success Rate: 95.5%
+```
+
+## Rate Limiting and Best Practices
+
+### Reddit Rate Limits
+- **Comments**: 1 per 10 minutes for new accounts, 1 per minute for established accounts
+- **API Calls**: 60 requests per minute
+
+### Recommendations
+- Start with `POLL_TIME=10000` (10 seconds) to avoid rate limiting
+- Use `LIMIT=5` for new accounts
+- Monitor error rates and adjust polling accordingly
+- Test in small subreddits first
+
+## Error Handling
+
+The bot includes comprehensive error handling:
+
+- **API Failures**: Graceful degradation with error messages
+- **Network Issues**: Automatic retry logic
+- **Rate Limiting**: Respect Reddit's rate limits
+- **Invalid Responses**: Fallback error messages
 
 ## Troubleshooting
 
 ### Common Issues
 
-- **Reddit authentication failures**: Ensure your Reddit API credentials are correctly set up in the `.env` file.
-- **Shapes API errors**: Verify your Shapes API key and username are correct and that the API is accessible.
-- **No responses**: Check that the bot is properly connected to Reddit and is listening to the correct subreddit. Ensure the bot's username is correctly mentioned in comments.
+**Bot not responding to mentions:**
+- Check subreddit name spelling in `REDDIT_SUBREDDITS`
+- Verify bot has permission to post in the subreddit
+- Check Reddit API credentials
 
-### Debugging
+**API errors:**
+- Verify Shapes.inc API key and username
+- Check API rate limits
+- Monitor network connectivity
 
-The application logs all incoming comments, API interactions, and any errors encountered to the console. Check the console logs to identify issues.
+**Permission errors:**
+- Ensure bot account has sufficient karma
+- Check if subreddit allows bots
+- Verify account is not shadowbanned
 
-## How It Works
+### Debug Mode
 
-1. **Initialization**: The bot loads environment variables, initializes the Snoowrap client for Reddit interaction, and sets up the OpenAI client pointing to the Shapes API.
-2. **Comment Stream**: It starts a comment stream using snoostorm to monitor new comments in the specified subreddit.
-3. **Mention Detection**: For each new comment, it checks if the bot's username is mentioned using canSummon. It also filters out comments made by the bot itself or made before the bot started.
-4. **Shapes API Processing**: If a mention is detected, the comment body is sent to the processWithShapes function. This function calls the Shapes API with the comment content, user ID (comment author), and channel ID (subreddit name).
-5. **Replying to Comment**: The response received from the Shapes API is then used to reply to the original comment on Reddit.
-6. **Error Handling**: Basic error handling is included for both Shapes API calls and Reddit replies, logging errors and attempting to post a generic error message on Reddit if a reply fails.
+Add debug logging by modifying the poll time:
+```bash
+POLL_TIME=30000  # Slower polling for debugging
+```
+
+### Log Analysis
+
+Check logs for patterns:
+```bash
+# If using PM2
+pm2 logs shape-reddit
+
+# If running directly
+node index.js 2>&1 | tee bot.log
+```
+
+## Deployment Options
+
+### Local Development
+- Run with `npm run dev` for hot reloading
+- Use `.env` file for configuration
+
+### VPS/Cloud Server
+- Use PM2 for process management
+- Set up log rotation
+- Monitor with systemd or similar
+
+### Docker (Optional)
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+CMD ["npm", "start"]
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/shapesinc/api/blob/main/license) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Support
 
-## Contribution
+For issues and questions:
+1. Check the troubleshooting section
+2. Review existing GitHub issues
+3. Create a new issue with detailed information
 
-Feel free to submit issues or pull requests to improve the bot. Ensure any changes are tested and maintain compatibility with Reddit's API and the Shapes API.
+## Changelog
+
+### v2.0.0
+- Added multi-subreddit support
+- Implemented random reply functionality
+- Enhanced error handling and logging
+- Added comprehensive statistics tracking
+- Improved configuration options
+
+### v1.0.0
+- Initial release
+- Basic mention detection and response
+- Shapes.inc API integration
+
+## Security Notes
+
+- Never commit your `.env` file
+- Use strong passwords for Reddit accounts
+- Regularly rotate API keys
+- Monitor bot activity for abuse
+- Respect Reddit's terms of service
+
+## Performance Tips
+
+- Optimize `POLL_TIME` based on subreddit activity
+- Use appropriate `LIMIT` values to balance responsiveness and API usage
+- Monitor memory usage for long-running instances
+- Consider implementing caching for frequent requests
